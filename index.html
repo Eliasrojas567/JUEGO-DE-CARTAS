@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama LSC - Realista</title>
+    <style>
+        :root {
+            /* Definimos el gradiente solicitado */
+            --bg-gradient: linear-gradient(135deg, #0f0c29 0%, #1a1040 50%, #0f0c29 100%);
+            --card-front: #1a1a1a;
+            --accent-yellow: #f1c40f;
+            --text-light: #ffffff;
+            --success-green: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Aplicamos el gradiente al fondo */
+            background: var(--bg-gradient);
+            background-attachment: fixed; /* Mantiene el fondo estático al hacer scroll */
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .stats {
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px); /* Efecto de vidrio moderno */
+            padding: 10px 30px;
+            border-radius: 50px;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            aspect-ratio: 3/4;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #1e1e1e, #000);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-back::after {
+            content: "LSC";
+            font-weight: bold;
+            color: var(--accent-yellow);
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .card-front {
+            background-color: #000; /* Fondo negro para que las fotos resalten */
+            transform: rotateY(180deg);
+            padding: 8px;
+        }
+
+        .hand-image {
+            width: 100%;
+            height: 80%;
+            object-fit: contain; /* Para no deformar tus imágenes PNG */
+            border-radius: 8px;
+            background-color: #000;
+        }
+
+        .letter-tag {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent-yellow);
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+
+        /* Estilo cuando encuentras un par */
+        .card.matched .card-inner {
+            box-shadow: 0 0 20px var(--success-green);
+        }
+        
+        .card.matched .card-front {
+            border: 2px solid var(--success-green);
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 12px 40px;
+            background: var(--accent-yellow);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(241, 196, 15, 0.5);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Memorama Lengua de Señas</h1>
+    
+    <div class="stats">
+        Intentos: <span id="moves">0</span> | Pares: <span id="matches">0</span>
+    </div>
+
+    <div class="game-grid" id="gameGrid"></div>
+
+    <button onclick="resetGame()">Nuevo Juego</button>
+
+    <script>
+        // Lista de letras a usar (Puedes añadir todas las de la imagen)
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        
+        let cards = [];
+        let flippedCards = [];
+        let moves = 0;
+        let matches = 0;
+
+        function createCard(letter) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // Usamos la ruta relativa a tu carpeta local
+            // Convertimos la letra a mayúscula por seguridad para que coincida con tus nombres de archivo
+            const imagePath = `imagenes/seña_${letter.toUpperCase()}.PNG`;
+
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-back"></div>
+                    <div class="card-front">
+                        <img src="${imagePath}" 
+                             alt="Seña de la letra ${letter}" 
+                             class="hand-image"
+                             onerror="this.src='https://via.placeholder.com/150?text=Error+Imagen'">
+                        <div class="letter-tag">${letter}</div>
+                    </div>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => flipCard(card, letter));
+            return card;
+        }
+
+        function flipCard(card, letter) {
+            if (flippedCards.length < 2 && !card.classList.contains('flipped') && !card.classList.contains('matched')) {
+                card.classList.add('flipped');
+                flippedCards.push({card, letter});
+
+                if (flippedCards.length === 2) {
+                    moves++;
+                    document.getElementById('moves').innerText = moves;
+                    checkMatch();
+                }
+            }
+        }
+
+        function checkMatch() {
+            const [c1, c2] = flippedCards;
+            if (c1.letter === c2.letter) {
+                c1.card.classList.add('matched');
+                c2.card.classList.add('matched');
+                matches++;
+                document.getElementById('matches').innerText = matches;
+                flippedCards = [];
+                if (matches === alphabet.length) setTimeout(() => alert('¡Excelente! Has dominado estas señas.'), 500);
+            } else {
+                setTimeout(() => {
+                    c1.card.classList.remove('flipped');
+                    c2.card.classList.remove('flipped');
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function resetGame() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            moves = 0;
+            matches = 0;
+            document.getElementById('moves').innerText = '0';
+            document.getElementById('matches').innerText = '0';
+            
+            // Creamos pares y barajamos
+            const gameSet = [...alphabet, ...alphabet].sort(() => Math.random() - 0.5);
+            gameSet.forEach(letter => grid.appendChild(createCard(letter)));
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
