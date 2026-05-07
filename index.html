@@ -169,25 +169,29 @@
         let matches = 0;
 
         function createCard(letter) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            
-            // Usamos la ruta relativa a tu carpeta local
-            // Convertimos la letra a mayúscula por seguridad para que coincida con tus nombres de archivo
-            const imagePath = `imagenes/seña_${letter.toUpperCase()}.PNG`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    // Ajustado: Usamos "sena" en lugar de "seña" y normalizamos a mayúsculas
+    // Asegúrate de que tus archivos en la carpeta se llamen exactamente así: sena_A.PNG
+    const imagePath = `imagenes/sena_${letter.toUpperCase()}.PNG`;
 
-            card.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-back"></div>
-                    <div class="card-front">
-                        <img src="${imagePath}" 
-                             alt="Seña de la letra ${letter}" 
-                             class="hand-image"
-                             onerror="this.src='https://via.placeholder.com/150?text=Error+Imagen'">
-                        <div class="letter-tag">${letter}</div>
-                    </div>
-                </div>
-            `;
+    card.innerHTML = `
+        <div class="card-inner">
+            <div class="card-back"></div>
+            <div class="card-front">
+                <img src="${imagePath}" 
+                     alt="Seña de la letra ${letter}" 
+                     class="hand-image"
+                     onerror="this.src='https://via.placeholder.com/150/000000/F1C40F?text=${letter}'">
+                <div class="letter-tag">${letter}</div>
+            </div>
+        </div>
+    `;
+    
+    card.addEventListener('click', () => flipCard(card, letter));
+    return card;
+}
             
             card.addEventListener('click', () => flipCard(card, letter));
             return card;
